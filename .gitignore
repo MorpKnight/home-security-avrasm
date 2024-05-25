@@ -1,0 +1,5 @@
+# Ignore everything in build folders
+*/build/*
+
+# But don't ignore .hex files in build folders
+!*/build/*.hex

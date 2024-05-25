@@ -1,0 +1,5 @@
+{
+    "sketch": "Slave.ino",
+    "board": "arduino:avr:uno",
+    "output": "./build"
+}
