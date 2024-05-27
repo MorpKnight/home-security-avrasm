@@ -16,26 +16,8 @@ main:
   LDI     R30, 6                ; Setting up & clearing register for hours in jamDigital
 
 again:
-  ; SBI     DDRB, 1               ; Set pin 1 as output
-  ; CBI     PORTB, 1              ; Set pin 1 as low
   RCALL   delay_20ms            ; Delay 20ms
-  ; SBI     PORTB, 1              ; Set pin 1 as high
-  
   CBI     DDRB, 1               ; Set pin 1 as input
-  ; w1:     
-  ; SBIC    PINB, 1               ; Wait for the pin to be low
-  ; RJMP    w1                    ; Jump to w1
-  ; w2:     
-  ; SBIS    PINB, 1               ; Wait for the pin to be high
-  ; RJMP    w2                    ; Jump to w2
-  ; w3:     
-  ; SBIC    PINB, 1               ; Wait for the pin to be low
-  ; RJMP    w3                    ; Jump to w3
-  
-  ; RCALL   DHT11_reading         ; Read first 8 bits of data from DHT11
-  ; MOV     R19, R18                ; Store the data in R19
-  ; RCALL   DHT11_reading         ; Read the next 8 bits of data from DHT11
-  ; RCALL   DHT11_reading         ; Read the next 8 bits of data from DHT11
   
 sendResult: 
   CBI     PORTB, 1              ; Set pin 1 as low
@@ -44,6 +26,8 @@ sendResult:
   RCALL   I2C_write             ; Write the address of the slave
   SBIC    PINB, 1               ; Skip if the value of PINB is 0
   LDI     R26, 0xFF             ; Load the value of 0xFF to R26
+  SBIS    PINB, 1               ; Skip if the value of PINB is 1
+  LDI     R26, 0x00             ; Load the value of 0x00 to R26
   ; MOV     R26, R18                ; Move the data to R26
   ; RCALL jamDigital
   RCALL   I2C_write2            ; Write the data to the slave
@@ -70,42 +54,6 @@ delay_timer0:
 
   LDI     R20, (1<<OCF0A)       ; Load the value of (1<<OCF0A) to R20
   OUT     TIFR0, R20            ; Set the value of R20 to TIFR0 | Reset the timer
-  RET                           ; Return
-
-jamDigital:
-  INC     R25                   ; Increment R25
-  CPI     R25, 60               ; Compare R25 with 60
-  BRNE    jamDigital_detik      ; Branch if not equal to jamDigital_detik
-  LDI     R25, 0                ; Load the value of 0 to R25
-  INC     R29                   ; Increment R29
-
-jamDigital_detik:
-  CPI     R29, 60               ; Compare R29 with 60
-  BRNE    jamDigital_menit      ; Branch if not equal to jamDigital_menit
-  LDI     R29, 0                ; Load the value of 0 to R29
-  INC     R30                   ; Increment R30
-
-jamDigital_menit:
-  CPI     R30, 24               ; Compare R30 with 24
-  BRNE    jamDigital            ; Branch if not equal to jamDigital
-  LDI     R30, 0                ; Load the value of 0 to R30
-
-jamDigital_jam:
-  CPI     R30, 18               ; Compare R30 with 18
-  BRGE    kirimData             ; Branch if greater or equal to kirimData
-  CPI     R30, 6                ; Compare R30 with 6
-  BRLO    kirimData             ; Branch if lower to kirimData
-  RJMP    again                 ; Jump to again
-  RET                           ; Return
-
-kirimData:
-  RCALL   I2C_start             ; Start I2C
-  LDI     R27, 0b10010000       ; Address of the slave
-  RCALL   I2C_write             ; Write the address of the slave
-  CPI     R26, 0x0F             ; Compare R26 with 0x0F
-  BRNE    again                 ; Branch if not equal to again
-  LDI     R26, 0xFF             ; Load the value of 0xFF to R26
-  RCALL   I2C_write2            ; Write the data to the slave
   RET                           ; Return
 
 delay_50usec:
@@ -170,31 +118,6 @@ I2C_write2:
 I2C_stop:
   LDI     R21, (1<<TWINT)|(1<<TWSTO)|(1<<TWEN)  ; Load the value of (1<<TWINT)|(1<<TWSTO)|(1<<TWEN) to R21
   STS     TWCR, R21             ; Set the value of R21 to TWCR
-  RET                           ; Return
-  
-DHT11_reading:  
-  LDI     R17, 8                ; Load the value of 8 to R17
-  CLR     R18                   ; Clear R18
-  
-w4: 
-  SBIS    PINB, 1               ; Skip if the value of PINB is 1
-  RJMP    w4                    ; Jump to w4
-  RCALL   delay_timer0          ; Delay timer 0
-  
-  SBIS    PINB, 1               ; Skip if the value of PINB is 1
-  RJMP    skp                   ; Jump to skp
-  SEC                           ; Set the carry flag
-  ROL     R18                   ; Rotate left through carry
-  RJMP    w5                    ; Jump to w5
-  skp:
-  LSL     R18                   ; Logical shift left
-  
-  w5: 
-  SBIC    PINB, 1               ; Skip if the value of PINB is 0
-  RJMP    w5                    ; Jump to w5
-  
-  DEC     R17                   ; Decrement R17
-  BRNE    w4                    ; Branch if not equal to w4
   RET                           ; Return
   
 delay_20ms:
